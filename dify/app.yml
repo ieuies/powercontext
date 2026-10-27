@@ -1,0 +1,308 @@
+app:
+  description: 一个会记住你的酒馆老板。跨会话记住客人的名字、偏好和八卦，下次见面主动提起。
+  icon: 🍺
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: 酒馆老板的记性
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: '欢迎来到铜铃酒馆。我是老板老陶——我这人记性好，你说过的话，我都记着。'
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 老板，还记得我吗？
+    - 我叫阿澈，喜欢桂花酒，讨厌吵闹的客人。
+    - 上次说的那个青铜钥匙，后来有消息吗？
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: http-request
+      id: start-source-recall-target
+      source: 'start'
+      sourceHandle: source
+      target: 'recall'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: recall-source-llm-target
+      source: 'recall'
+      sourceHandle: source
+      target: 'llm'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: http-request
+      id: llm-source-remember-target
+      source: 'llm'
+      sourceHandle: source
+      target: 'remember'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: remember-source-answer-target
+      source: 'remember'
+      sourceHandle: source
+      target: 'answer'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: 玩家标识：换一个 player_id 就是另一位客人，用来演示“跨会话记忆”。
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: 玩家编号
+          max_length: 64
+          options: []
+          required: true
+          type: text-input
+          variable: player_id
+      height: 90
+      id: 'start'
+      position:
+        x: 60
+        y: 300
+      positionAbsolute:
+        x: 60
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: recall-player
+            key: player_id
+            type: text
+            value: '{{#start.player_id#}}'
+          - id: recall-query
+            key: query
+            type: text
+            value: '{{#sys.query#}}'
+          - id: recall-limit
+            key: limit
+            type: number
+            value: 5
+          type: json
+        desc: 到 seekdb 里取这位客人以前说过的话
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        timeout:
+          max_connect_timeout: 5
+          max_read_timeout: 15
+          max_write_timeout: 5
+        title: 查询记忆（seekdb）
+        type: http-request
+        url: http://host.docker.internal:8080/memory/recall
+        variables: []
+        version: '2'
+      height: 98
+      id: 'recall'
+      position:
+        x: 380
+        y: 300
+      positionAbsolute:
+        x: 380
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 把查到的记忆放进系统提示词，决定老板怎么“回忆”
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 3b1f6f0e-9d3c-4f34-9f0e-2a6f3f6f0001
+          role: system
+          text: '你是“铜铃酒馆”的老板老陶。你记性极好，记得每位客人说过的话。
+
+
+            下面是从 seekdb 记忆库里查到的、关于这位客人的记忆（JSON）：
+
+            {{#recall.body#}}
+
+
+            要求：
+
+            - 用第一人称、口语化的中文回复，2 到 4 句，像酒馆老板说话。
+
+            - 只依据上面的记忆来“回忆”客人；记忆为空时，自然地说像第一次见面。
+
+            - 不要编造记忆中没有的事实，也不要提到“数据库”“JSON”“记忆库”这些实现细节。
+
+            - 如果客人这次说了新的个人信息（名字、喜好、经历），用一句话回应它。'
+        - role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: 老板开口
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: 'llm'
+      position:
+        x: 700
+        y: 300
+      positionAbsolute:
+        x: 700
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: remember-player
+            key: player_id
+            type: text
+            value: '{{#start.player_id#}}'
+          - id: remember-session
+            key: session_id
+            type: text
+            value: '{{#sys.conversation_id#}}'
+          - id: remember-user
+            key: user_message
+            type: text
+            value: '{{#sys.query#}}'
+          - id: remember-reply
+            key: assistant_reply
+            type: text
+            value: '{{#llm.text#}}'
+          type: json
+        desc: 把这一轮说到的名字、偏好、经历写回 seekdb
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        timeout:
+          max_connect_timeout: 5
+          max_read_timeout: 15
+          max_write_timeout: 5
+        title: 记住这一轮（seekdb）
+        type: http-request
+        url: http://host.docker.internal:8080/memory/remember
+        variables: []
+        version: '2'
+      height: 98
+      id: 'remember'
+      position:
+        x: 1020
+        y: 300
+      positionAbsolute:
+        x: 1020
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#llm.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 119
+      id: 'answer'
+      position:
+        x: 1340
+        y: 300
+      positionAbsolute:
+        x: 1340
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+  retry_config: null
+  timezone: Asia/Shanghai

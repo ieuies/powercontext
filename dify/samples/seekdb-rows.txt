@@ -1,0 +1,10 @@
+player_id	name
+player-001	阿澈
+id	kind	content	session_id
+15	name	阿澈	session-a
+16	preference	喜欢桂花酒	session-a
+17	preference	讨厌吵闹的客人	session-a
+18	event	我最近在找一个叫‘青铜钥匙’的东西。	session-a
+id	session_id	user_message	assistant_reply
+9	session-a	老板，我叫阿澈，我喜欢桂花酒，讨厌吵闹的客人。	阿澈啊，桂花酒给你留着，靠窗的位置安静。
+10	session-a	我最近在找一个叫‘青铜钥匙’的东西。	青铜钥匙？地窖里倒是有把旧的。
