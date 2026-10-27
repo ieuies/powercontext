@@ -1,0 +1,64 @@
+== 第一晚 ==
+{
+  "player_id": "player-001",
+  "stored": [
+    {
+      "kind": "name",
+      "content": "阿澈"
+    },
+    {
+      "kind": "preference",
+      "content": "喜欢桂花酒"
+    },
+    {
+      "kind": "preference",
+      "content": "讨厌吵闹的客人"
+    }
+  ]
+}
+{
+  "player_id": "player-001",
+  "stored": [
+    {
+      "kind": "event",
+      "content": "我最近在找一个叫‘青铜钥匙’的东西。"
+    }
+  ]
+}
+
+== 第二晚（新会话）==
+{
+  "player_id": "player-001",
+  "name": "阿澈",
+  "memories": [
+    {
+      "kind": "name",
+      "content": "阿澈",
+      "created_at": null
+    },
+    {
+      "kind": "preference",
+      "content": "喜欢桂花酒",
+      "created_at": "2026-10-27 20:47:23"
+    },
+    {
+      "kind": "event",
+      "content": "我最近在找一个叫‘青铜钥匙’的东西。",
+      "created_at": "2026-10-27 20:47:23"
+    }
+  ],
+  "recent": [
+    {
+      "user_message": "我最近在找一个叫‘青铜钥匙’的东西。",
+      "assistant_reply": "青铜钥匙？地窖里倒是有把旧的。",
+      "created_at": "2026-10-27 20:47:23"
+    },
+    {
+      "user_message": "老板，我叫阿澈，我喜欢桂花酒，讨厌吵闹的客人。",
+      "assistant_reply": "阿澈啊，桂花酒给你留着，靠窗的位置安静。",
+      "created_at": "2026-10-27 20:47:23"
+    }
+  ]
+}
+
+OK: 跨会话记忆命中 name / preference / event
